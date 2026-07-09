@@ -64,30 +64,38 @@ services:
         condition: service_healthy
     networks: [campus-net]
 
+  # ---------------------------------------------------------------
+  # Servicio Académico (Paso 3) — publica StudentEnrolled
+  # ---------------------------------------------------------------
+  academic-service:
+    build: ./services/academic-service
+    container_name: cc360-academic
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/academic_db
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-campus}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-campus123}
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_USERNAME: ${RABBITMQ_USER:-campus}
+      SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_PASS:-campus123}
+    ports:
+      - "8091:8080"   # http://localhost:8091/swagger-ui.html
+    networks: [campus-net]
+
   # ===============================================================
-  # MICROSERVICIOS — se habilitan en los pasos siguientes del plan.
+  # SERVICIOS PENDIENTES — se habilitan en los pasos siguientes.
   # Plantilla de referencia (descomentar cuando el servicio exista):
   #
-  # academic-service:
-  #   build: ./services/academic-service
-  #   container_name: cc360-academic
-  #   depends_on:
-  #     postgres:   { condition: service_healthy }
-  #     rabbitmq:   { condition: service_healthy }
-  #   environment:
-  #     SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/academic_db
-  #     SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-campus}
-  #     SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-campus123}
-  #     SPRING_RABBITMQ_HOST: rabbitmq
-  #     SPRING_RABBITMQ_USERNAME: ${RABBITMQ_USER:-campus}
-  #     SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_PASS:-campus123}
-  #     JWT_SECRET: ${JWT_SECRET}
-  #   ports: ["8091:8080"]
-  #   networks: [campus-net]
+  # payment-service (8092, Paso 5), notification-service (8093, Paso 4),
+  # attendance-service (8094, Paso 6), analytics-service (8095, Paso 4),
+  # api-gateway (8080, Paso 8), frontend (3000, Paso 7)
   #
-  # (payment-service 8092, notification-service 8093,
-  #  attendance-service 8094, analytics-service 8095,
-  #  api-gateway 8080, frontend 3000)
+  # Cada uno sigue el mismo patrón que academic-service, apuntando a su
+  # propia base (payment_db, notification_db, ...) y al mismo RabbitMQ.
   # ===============================================================
 
 volumes:
