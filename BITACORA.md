@@ -39,6 +39,17 @@
 - **Decisión:** una sola instancia PostgreSQL con 5 bases separadas (aislamiento lógico,
   laptop-friendly); en producción serían instancias independientes.
 
+### Paso 3 — Servicio Académico
+- Microservicio Spring Boot (Java 21): entidades `Student`/`Enrollment`/`EventLog`, API REST
+  `/academic/*`, Swagger/OpenAPI, health check (Actuator).
+- **Publicación de eventos:** `EventPublisher` + `EventEnvelope` (envelope estándar) envían
+  `StudentEnrolled` al topic exchange `campus.events` con routing key `student.enrolled`.
+- **Codificación de IDs de negocio** (`STU-001`, `ENR-001`) asignados tras persistir.
+- `EventLog` local para el historial de eventos por estudiante (trazabilidad).
+- Datos semilla: 3 estudiantes de ejemplo (sin publicar eventos, representan datos previos).
+- **Decisión:** el servicio Académico es *productor*; las colas/bindings los declara cada
+  consumidor (Notificaciones/Analítica en pasos 4+). Aquí solo se declara el exchange.
+
 ## Problemas encontrados
 - _(registrar aquí a medida que aparezcan)_
 
