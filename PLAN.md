@@ -75,7 +75,14 @@ para la cláusula de autoría y la defensa individual.
 
 ---
 
-## Paso 4 — Servicio de Notificaciones + Analítica base (Publish/Subscribe) (Semana 2)
+## Paso 4 — Servicio de Notificaciones + Analítica base (Publish/Subscribe) (Semana 2) ✅
+
+> **Completado (backend).** Dos microservicios consumidores:
+> [`notification-service`](services/notification-service/README.md) (colas
+> `q.notifications.*` con DLQ, publica `NotificationSent/Failed`) y
+> [`analytics-service`](services/analytics-service/README.md) (cola `q.analytics.all`
+> con binding `#`, read model CQRS, `/analytics/dashboard`). Conversor JSON en modo
+> INFERRED para desacoplar productor/consumidor. Ambos habilitados en Compose.
 
 **Objetivo:** demostrar que **varios consumidores** reaccionan a un mismo evento.
 

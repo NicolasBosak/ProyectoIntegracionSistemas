@@ -50,6 +50,21 @@
 - **Decisión:** el servicio Académico es *productor*; las colas/bindings los declara cada
   consumidor (Notificaciones/Analítica en pasos 4+). Aquí solo se declara el exchange.
 
+### Paso 4 — Notificaciones + Analítica (Publish/Subscribe)
+- **notification-service:** consume `StudentEnrolled`/`PaymentConfirmed`/`IncidentReported`
+  (colas `q.notifications.*` con Dead Letter Channel hacia `campus.dlx`), genera notificación
+  simulada y publica `NotificationSent`. Reintentos + `default-requeue-rejected: false`.
+- **analytics-service:** cola `q.analytics.all` con binding `#` (recibe todos los eventos),
+  read model CQRS en `metric_counters` + `event_records`; expone `/analytics/dashboard` y
+  `/analytics/events`. Guardia de idempotencia por `eventId`.
+- **Problema resuelto (mensajería entre servicios):** el productor añade el header
+  `__TypeId__` con su clase; el consumidor, en otro paquete, no la tiene → `ClassNotFoundException`.
+  **Solución:** conversor `Jackson2JsonMessageConverter` con `DefaultJackson2JavaTypeMapper`
+  en `TypePrecedence.INFERRED` y `trustedPackages("*")`, deserializando según el tipo del
+  `@RabbitListener`. Mantiene los servicios desacoplados sin compartir clases.
+- **Nota CQRS:** analítica es event-sourced; solo cuenta eventos ocurridos mientras está
+  activa (los 3 estudiantes semilla, que no publican eventos, no se contabilizan).
+
 ## Problemas encontrados
 - _(registrar aquí a medida que aparezcan)_
 
