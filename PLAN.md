@@ -56,7 +56,13 @@ para la cláusula de autoría y la defensa individual.
 
 ---
 
-## Paso 3 — Servicio Académico + evento StudentEnrolled (Semana 2)
+## Paso 3 — Servicio Académico + evento StudentEnrolled (Semana 2) ✅
+
+> **Completado (backend).** Microservicio Spring Boot en
+> [`services/academic-service`](services/academic-service/README.md): API REST `/academic/*`,
+> persistencia en `academic_db`, publicación de `StudentEnrolled` a `campus.events`
+> (routing key `student.enrolled`), historial de eventos, datos semilla y Swagger/OpenAPI.
+> Habilitado en [`docker-compose.yml`](docker-compose.yml). Pendiente de ejecutar con Docker.
 
 **Objetivo:** primer flujo vertical completo (UI → API → BD → evento → consumidor).
 
