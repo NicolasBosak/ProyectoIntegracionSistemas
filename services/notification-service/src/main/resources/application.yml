@@ -1,0 +1,43 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: notification-service
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/notification_db}
+    username: ${SPRING_DATASOURCE_USERNAME:campus}
+    password: ${SPRING_DATASOURCE_PASSWORD:campus123}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+  rabbitmq:
+    host: ${SPRING_RABBITMQ_HOST:localhost}
+    port: ${SPRING_RABBITMQ_PORT:5672}
+    username: ${SPRING_RABBITMQ_USERNAME:campus}
+    password: ${SPRING_RABBITMQ_PASSWORD:campus123}
+    listener:
+      simple:
+        default-requeue-rejected: false   # los mensajes rechazados van a la DLQ, no se reencolan
+        retry:
+          enabled: true
+          max-attempts: 3
+          initial-interval: 2000
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
+campus:
+  messaging:
+    exchange: campus.events
