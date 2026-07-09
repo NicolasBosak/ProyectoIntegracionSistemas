@@ -86,16 +86,54 @@ services:
       - "8091:8080"   # http://localhost:8091/swagger-ui.html
     networks: [campus-net]
 
+  # ---------------------------------------------------------------
+  # Servicio de Notificaciones (Paso 4) — consume eventos, notifica
+  # ---------------------------------------------------------------
+  notification-service:
+    build: ./services/notification-service
+    container_name: cc360-notification
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/notification_db
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-campus}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-campus123}
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_USERNAME: ${RABBITMQ_USER:-campus}
+      SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_PASS:-campus123}
+    ports:
+      - "8093:8080"   # http://localhost:8093/swagger-ui.html
+    networks: [campus-net]
+
+  # ---------------------------------------------------------------
+  # Servicio de Analítica (Paso 4) — read model / CQRS del dashboard
+  # ---------------------------------------------------------------
+  analytics-service:
+    build: ./services/analytics-service
+    container_name: cc360-analytics
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/analytics_db
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-campus}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-campus123}
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_USERNAME: ${RABBITMQ_USER:-campus}
+      SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_PASS:-campus123}
+    ports:
+      - "8095:8080"   # http://localhost:8095/swagger-ui.html
+    networks: [campus-net]
+
   # ===============================================================
   # SERVICIOS PENDIENTES — se habilitan en los pasos siguientes.
-  # Plantilla de referencia (descomentar cuando el servicio exista):
-  #
-  # payment-service (8092, Paso 5), notification-service (8093, Paso 4),
-  # attendance-service (8094, Paso 6), analytics-service (8095, Paso 4),
-  # api-gateway (8080, Paso 8), frontend (3000, Paso 7)
-  #
-  # Cada uno sigue el mismo patrón que academic-service, apuntando a su
-  # propia base (payment_db, notification_db, ...) y al mismo RabbitMQ.
+  # payment-service (8092, Paso 5), attendance-service (8094, Paso 6),
+  # api-gateway (8080, Paso 8), frontend (3000, Paso 7).
   # ===============================================================
 
 volumes:
