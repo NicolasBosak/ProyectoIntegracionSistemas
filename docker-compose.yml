@@ -1,0 +1,98 @@
+# CampusConnect 360 — Orquestación de contenedores
+# Paso 2: infraestructura base (broker + bases de datos) funcionando.
+# Los microservicios y el frontend se irán habilitando en los pasos 3-8
+# (bloques comentados al final, listos para descomentar).
+
+name: campusconnect360
+
+services:
+  # ---------------------------------------------------------------
+  # Mensajería: RabbitMQ con panel de administración
+  # ---------------------------------------------------------------
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: cc360-rabbitmq
+    hostname: rabbitmq
+    ports:
+      - "5672:5672"     # AMQP
+      - "15672:15672"   # Panel de administración (http://localhost:15672)
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-campus}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS:-campus123}
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+    networks: [campus-net]
+
+  # ---------------------------------------------------------------
+  # Persistencia: PostgreSQL con una base de datos por servicio
+  # (creadas por infra/postgres/init/01-create-databases.sql)
+  # ---------------------------------------------------------------
+  postgres:
+    image: postgres:16
+    container_name: cc360-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-campus}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-campus123}
+      POSTGRES_DB: postgres
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./infra/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-campus}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks: [campus-net]
+
+  # ---------------------------------------------------------------
+  # Utilidad: cliente web para inspeccionar las bases (evidencia)
+  # ---------------------------------------------------------------
+  adminer:
+    image: adminer:4
+    container_name: cc360-adminer
+    ports:
+      - "8081:8080"   # http://localhost:8081  (Sistema: PostgreSQL, Servidor: postgres)
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks: [campus-net]
+
+  # ===============================================================
+  # MICROSERVICIOS — se habilitan en los pasos siguientes del plan.
+  # Plantilla de referencia (descomentar cuando el servicio exista):
+  #
+  # academic-service:
+  #   build: ./services/academic-service
+  #   container_name: cc360-academic
+  #   depends_on:
+  #     postgres:   { condition: service_healthy }
+  #     rabbitmq:   { condition: service_healthy }
+  #   environment:
+  #     SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/academic_db
+  #     SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-campus}
+  #     SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-campus123}
+  #     SPRING_RABBITMQ_HOST: rabbitmq
+  #     SPRING_RABBITMQ_USERNAME: ${RABBITMQ_USER:-campus}
+  #     SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_PASS:-campus123}
+  #     JWT_SECRET: ${JWT_SECRET}
+  #   ports: ["8091:8080"]
+  #   networks: [campus-net]
+  #
+  # (payment-service 8092, notification-service 8093,
+  #  attendance-service 8094, analytics-service 8095,
+  #  api-gateway 8080, frontend 3000)
+  # ===============================================================
+
+volumes:
+  pgdata:
+
+networks:
+  campus-net:
+    driver: bridge

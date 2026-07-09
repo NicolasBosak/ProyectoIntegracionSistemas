@@ -1,0 +1,31 @@
+# Entorno
+.env
+
+# Java / Spring Boot (Maven & Gradle)
+target/
+build/
+.gradle/
+*.class
+*.jar
+!**/.mvn/wrapper/maven-wrapper.jar
+!**/gradle/wrapper/gradle-wrapper.jar
+
+# Node / React
+node_modules/
+dist/
+.vite/
+coverage/
+npm-debug.log*
+yarn-error.log*
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
