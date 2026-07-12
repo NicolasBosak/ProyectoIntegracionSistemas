@@ -4,7 +4,7 @@ Microservicio Spring Boot. Responsabilidad: estudiantes, matrículas y estado ac
 
 - **BD:** `academic_db` · **Puerto host:** 8091 (interno 8080)
 - **Publica:** `StudentEnrolled` (routing key `student.enrolled`) · `StudentStatusUpdated` (Paso 5)
-- **Consume:** `PaymentConfirmed` → cola `q.academic.payment`, con idempotencia (Paso 5)
+- **Consume:** `PaymentConfirmed` → cola `q.academic.payment`, con idempotencia (`processed_events`) → actualiza estado financiero y publica `StudentStatusUpdated`
 - **Swagger UI:** http://localhost:8091/swagger-ui.html
 - **Health:** http://localhost:8091/actuator/health
 

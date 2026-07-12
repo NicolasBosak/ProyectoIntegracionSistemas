@@ -96,7 +96,14 @@ para la cláusula de autoría y la defensa individual.
 
 ---
 
-## Paso 5 — Servicio de Pagos + flujo PaymentConfirmed (Semana 3)
+## Paso 5 — Servicio de Pagos + flujo PaymentConfirmed (Semana 3) ✅
+
+> **Completado (backend).** [`payment-service`](services/payment-service/README.md): API
+> `/payments/*`, consume `StudentEnrolled` (crea deuda de matrícula + proyección local),
+> publica `PaymentConfirmed`. [`academic-service`](services/academic-service/README.md)
+> ahora **consume** `PaymentConfirmed` (cola `q.academic.payment`) con **idempotencia**
+> (`processed_events`), actualiza el estado financiero y publica `StudentStatusUpdated`.
+> El `correlationId` de la matrícula se conserva a lo largo de todo el flujo.
 
 **Objetivo:** segundo flujo de negocio y actualización cruzada entre servicios.
 

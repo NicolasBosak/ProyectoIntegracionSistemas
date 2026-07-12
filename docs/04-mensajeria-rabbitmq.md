@@ -28,11 +28,17 @@ Cada consumidor tiene su cola con `x-dead-letter-exchange = campus.dlx` y su DLQ
 
 | Cola | Bind a `campus.events` (routing key) | Consumidor | DLQ |
 |---|---|---|---|
-| `q.notifications.student` | `student.enrolled` | Notificaciones | `dlq.notifications.student` |
-| `q.notifications.payment` | `payment.confirmed` | Notificaciones | `dlq.notifications.payment` |
-| `q.notifications.incident` | `incident.reported` | Notificaciones | `dlq.notifications.incident` |
-| `q.academic.payment` | `payment.confirmed` | Académico (actualiza estado) | `dlq.academic.payment` |
-| `q.analytics.all` | `#` (todos los eventos) | Analítica | `dlq.analytics.all` |
+| `q.notifications.student` | `student.enrolled` | Notificaciones | `q.notifications.student.dlq` |
+| `q.notifications.payment` | `payment.confirmed` | Notificaciones | `q.notifications.payment.dlq` |
+| `q.notifications.incident` | `incident.reported` | Notificaciones | `q.notifications.incident.dlq` |
+| `q.academic.payment` | `payment.confirmed` | Académico (actualiza estado) | `q.academic.payment.dlq` |
+| `q.payments.student` | `student.enrolled` | Pagos (crea deuda de matrícula) | `q.payments.student.dlq` |
+| `q.analytics.all` | `#` (todos los eventos) | Analítica | `q.analytics.all.dlq` |
+
+> **Nota (Paso 5):** `q.payments.student` se añadió para que Pagos construya su proyección
+> local de estudiantes por eventos (sin llamadas síncronas a Académico). Así `student.enrolled`
+> tiene **cuatro** consumidores (Notificaciones, Analítica, Pagos y —vía proyección— el propio
+> Académico), reforzando la evidencia de Publish/Subscribe.
 
 > El binding `#` en un exchange `topic` hace que Analítica reciba **todos** los eventos → base
 > del read model (CQRS). `payment.confirmed` llega a la vez a Notificaciones, Académico y

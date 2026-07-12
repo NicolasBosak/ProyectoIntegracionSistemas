@@ -65,6 +65,19 @@
 - **Nota CQRS:** analítica es event-sourced; solo cuenta eventos ocurridos mientras está
   activa (los 3 estudiantes semilla, que no publican eventos, no se contabilizan).
 
+### Paso 5 — Pagos + PaymentConfirmed + idempotencia
+- **payment-service:** API `/payments/*` (estudiantes, deudas, pendientes, confirmados,
+  confirmar). Publica `PaymentConfirmed`.
+- **Decisión event-driven:** Pagos consume `StudentEnrolled` (cola `q.payments.student`) para
+  crear la deuda de matrícula y una proyección local `student_refs`, evitando llamadas
+  síncronas a Académico. `student.enrolled` pasa a tener 4 consumidores.
+- **academic-service (modificado):** consume `PaymentConfirmed` (cola `q.academic.payment`),
+  actualiza `financialStatus` a `UP_TO_DATE` y publica `StudentStatusUpdated`.
+- **Idempotencia (Idempotent Receiver):** tabla `processed_events` (PK `eventId`); si el
+  evento ya fue procesado, se ignora. Cubre el flujo crítico de pagos.
+- **Trazabilidad:** el `correlationId` generado en la matrícula se reutiliza en la deuda, en
+  `PaymentConfirmed` y en `StudentStatusUpdated`, encadenando todo el flujo de negocio.
+
 ## Problemas encontrados
 - _(registrar aquí a medida que aparezcan)_
 
