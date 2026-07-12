@@ -1,4 +1,4 @@
-package com.campusconnect.academic.config;
+package com.campusconnect.payment.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.amqp.core.Binding;
@@ -12,26 +12,23 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.DefaultJackson2JavaTypeMapper;
 import org.springframework.amqp.support.converter.Jackson2JavaTypeMapper;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * Academico es PRODUCTOR (StudentEnrolled, StudentStatusUpdated) y, desde el Paso 5, tambien
- * CONSUMIDOR de PaymentConfirmed (cola q.academic.payment) para actualizar el estado financiero.
+ * Pagos es PRODUCTOR (PaymentConfirmed) y CONSUMIDOR (StudentEnrolled, para crear la deuda
+ * de matricula y mantener su proyeccion local de estudiantes).
  */
 @Configuration
 public class RabbitMQConfig {
 
+    public static final String EVENTS_EXCHANGE = "campus.events";
     public static final String DLX = "campus.dlx";
-    public static final String Q_PAYMENT = "q.academic.payment";
-
-    @Value("${campus.messaging.exchange}")
-    private String exchangeName;
+    public static final String Q_STUDENT = "q.payments.student";
 
     @Bean
-    public TopicExchange campusEventsExchange() {
-        return new TopicExchange(exchangeName, true, false);
+    public TopicExchange eventsExchange() {
+        return new TopicExchange(EVENTS_EXCHANGE, true, false);
     }
 
     @Bean
@@ -39,31 +36,29 @@ public class RabbitMQConfig {
         return new TopicExchange(DLX, true, false);
     }
 
-    // -------- Consumo de PaymentConfirmed --------
     @Bean
-    public Queue paymentQueue() {
-        return QueueBuilder.durable(Q_PAYMENT)
+    public Queue studentQueue() {
+        return QueueBuilder.durable(Q_STUDENT)
                 .withArgument("x-dead-letter-exchange", DLX)
-                .withArgument("x-dead-letter-routing-key", Q_PAYMENT + ".dlq")
+                .withArgument("x-dead-letter-routing-key", Q_STUDENT + ".dlq")
                 .build();
     }
 
     @Bean
-    public Queue paymentDlq() {
-        return QueueBuilder.durable(Q_PAYMENT + ".dlq").build();
+    public Queue studentDlq() {
+        return QueueBuilder.durable(Q_STUDENT + ".dlq").build();
     }
 
     @Bean
-    public Binding paymentBinding() {
-        return BindingBuilder.bind(paymentQueue()).to(campusEventsExchange()).with("payment.confirmed");
+    public Binding studentBinding() {
+        return BindingBuilder.bind(studentQueue()).to(eventsExchange()).with("student.enrolled");
     }
 
     @Bean
-    public Binding paymentDlqBinding() {
-        return BindingBuilder.bind(paymentDlq()).to(deadLetterExchange()).with(Q_PAYMENT + ".dlq");
+    public Binding studentDlqBinding() {
+        return BindingBuilder.bind(studentDlq()).to(deadLetterExchange()).with(Q_STUDENT + ".dlq");
     }
 
-    // -------- Conversor JSON (INFERRED: deserializa segun el tipo del listener) --------
     @Bean
     public Jackson2JsonMessageConverter jsonMessageConverter(ObjectMapper objectMapper) {
         Jackson2JsonMessageConverter converter = new Jackson2JsonMessageConverter(objectMapper);

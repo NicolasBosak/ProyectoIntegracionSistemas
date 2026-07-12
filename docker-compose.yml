@@ -130,10 +130,32 @@ services:
       - "8095:8080"   # http://localhost:8095/swagger-ui.html
     networks: [campus-net]
 
+  # ---------------------------------------------------------------
+  # Servicio de Pagos (Paso 5) — publica PaymentConfirmed
+  # ---------------------------------------------------------------
+  payment-service:
+    build: ./services/payment-service
+    container_name: cc360-payment
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/payment_db
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-campus}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-campus123}
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_USERNAME: ${RABBITMQ_USER:-campus}
+      SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_PASS:-campus123}
+    ports:
+      - "8092:8080"   # http://localhost:8092/swagger-ui.html
+    networks: [campus-net]
+
   # ===============================================================
   # SERVICIOS PENDIENTES — se habilitan en los pasos siguientes.
-  # payment-service (8092, Paso 5), attendance-service (8094, Paso 6),
-  # api-gateway (8080, Paso 8), frontend (3000, Paso 7).
+  # attendance-service (8094, Paso 6), api-gateway (8080, Paso 8),
+  # frontend (3000, Paso 7).
   # ===============================================================
 
 volumes:
