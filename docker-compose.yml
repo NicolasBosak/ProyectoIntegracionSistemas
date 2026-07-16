@@ -152,6 +152,7 @@ services:
       - "8092:8080"   # http://localhost:8092/swagger-ui.html
     networks: [campus-net]
 
+<<<<<<< HEAD
   # ---------------------------------------------------------------
   # Servicio de Asistencia/Bienestar (Paso 6)
   # ---------------------------------------------------------------
@@ -178,6 +179,12 @@ services:
   # SERVICIOS PENDIENTES — se habilitan en los pasos siguientes.
   # api-gateway (8080, Paso 8), frontend (3000, Paso 7 se corre con
   # `npm run dev`; se conteneriza tras el gateway en el Paso 8).
+=======
+  # ===============================================================
+  # SERVICIOS PENDIENTES — se habilitan en los pasos siguientes.
+  # attendance-service (8094, Paso 6), api-gateway (8080, Paso 8),
+  # frontend (3000, Paso 7).
+>>>>>>> aabb2f6c7b243b2b766a4a8856ba478f9eda8156
   # ===============================================================
 
 volumes:

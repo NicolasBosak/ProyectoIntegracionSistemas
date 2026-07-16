@@ -78,6 +78,7 @@
 - **Trazabilidad:** el `correlationId` generado en la matrícula se reutiliza en la deuda, en
   `PaymentConfirmed` y en `StudentStatusUpdated`, encadenando todo el flujo de negocio.
 
+<<<<<<< HEAD
 ### Paso 6 — Asistencia/Bienestar (4 eventos completos)
 - **attendance-service:** API `/attendance/*`; consume `StudentEnrolled` (proyección local),
   publica `AttendanceRecorded` e `IncidentReported`. Con esto quedan los 4 eventos obligatorios.
@@ -93,6 +94,8 @@
   esbuild. Se resolvió con `frontend/pnpm-workspace.yaml` → `allowBuilds: { esbuild: true }`,
   así `pnpm install` y `pnpm run build` funcionan sin pasos manuales.
 
+=======
+>>>>>>> aabb2f6c7b243b2b766a4a8856ba478f9eda8156
 ## Problemas encontrados
 - _(registrar aquí a medida que aparezcan)_
 
