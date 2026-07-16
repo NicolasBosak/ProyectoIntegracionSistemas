@@ -1,22 +1,22 @@
 import { NavLink, useNavigate } from 'react-router-dom'
-import { getRole, clearRole, ROLES } from '../session.js'
+import { getRole, clearSession, ROLES, ROLE_ROUTES } from '../session.js'
 
-// Para la demo "un dia de operacion" el navegador puede recorrer todos los portales.
-// El rol activo se resalta; en el Paso 8 el JWT restringira el acceso por rol.
-const NAV = [
-  { to: '/academico', label: 'Portal Académico' },
-  { to: '/finanzas', label: 'Portal Financiero' },
-  { to: '/docente', label: 'Portal Docente' },
-  { to: '/dashboard', label: 'Dashboard' }
-]
+const ALL_NAV = {
+  '/academico': 'Portal Académico',
+  '/finanzas': 'Portal Financiero',
+  '/docente': 'Portal Docente',
+  '/dashboard': 'Dashboard'
+}
 
 export default function Layout({ children }) {
   const navigate = useNavigate()
   const role = getRole()
   const roleLabel = role && ROLES[role] ? ROLES[role].label : role
+  // El gateway autoriza por rol; la navegación muestra solo lo permitido.
+  const allowed = ROLE_ROUTES[role] || []
 
   function logout() {
-    clearRole()
+    clearSession()
     navigate('/login')
   }
 
@@ -25,10 +25,10 @@ export default function Layout({ children }) {
       <header className="topbar">
         <div className="brand">CampusConnect <span>360</span></div>
         <nav className="nav">
-          {NAV.map((item) => (
-            <NavLink key={item.to} to={item.to}
+          {allowed.map((to) => (
+            <NavLink key={to} to={to}
               className={({ isActive }) => 'nav-link' + (isActive ? ' active' : '')}>
-              {item.label}
+              {ALL_NAV[to]}
             </NavLink>
           ))}
         </nav>

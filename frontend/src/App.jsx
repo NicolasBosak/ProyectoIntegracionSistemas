@@ -5,10 +5,15 @@ import AcademicPortal from './pages/AcademicPortal.jsx'
 import FinancialPortal from './pages/FinancialPortal.jsx'
 import TeacherPortal from './pages/TeacherPortal.jsx'
 import Dashboard from './pages/Dashboard.jsx'
-import { getRole } from './session.js'
+import { getToken, getRole, ROLES } from './session.js'
 
 function Protected({ children }) {
-  return getRole() ? <Layout>{children}</Layout> : <Navigate to="/login" replace />
+  return getToken() ? <Layout>{children}</Layout> : <Navigate to="/login" replace />
+}
+
+function home() {
+  const role = getRole()
+  return role && ROLES[role] ? ROLES[role].path : '/login'
 }
 
 export default function App() {
@@ -19,7 +24,7 @@ export default function App() {
       <Route path="/finanzas" element={<Protected><FinancialPortal /></Protected>} />
       <Route path="/docente" element={<Protected><TeacherPortal /></Protected>} />
       <Route path="/dashboard" element={<Protected><Dashboard /></Protected>} />
-      <Route path="*" element={<Navigate to={getRole() ? '/dashboard' : '/login'} replace />} />
+      <Route path="*" element={<Navigate to={getToken() ? home() : '/login'} replace />} />
     </Routes>
   )
 }

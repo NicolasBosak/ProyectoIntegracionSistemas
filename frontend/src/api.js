@@ -1,14 +1,12 @@
-// Cliente HTTP minimo. Las rutas son relativas: en desarrollo Vite las reenvia a cada
-// microservicio; en el Paso 8 pasaran por el API Gateway (mismo origen).
+// Cliente HTTP. Las rutas son relativas: Vite las reenvia al API Gateway, que valida el JWT.
 
 async function request(method, path, body) {
   const options = {
     method,
     headers: { 'Content-Type': 'application/json' }
   }
-  // El token JWT se agregara en el Paso 8:
-  // const token = localStorage.getItem('cc360_token')
-  // if (token) options.headers['Authorization'] = `Bearer ${token}`
+  const token = localStorage.getItem('cc360_token')
+  if (token) options.headers['Authorization'] = `Bearer ${token}`
   if (body !== undefined) options.body = JSON.stringify(body)
 
   const res = await fetch(path, options)

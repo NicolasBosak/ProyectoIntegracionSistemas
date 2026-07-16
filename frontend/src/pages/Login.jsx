@@ -1,13 +1,31 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ROLES, setRole } from '../session.js'
+import { api } from '../api.js'
+import { ROLES, saveSession } from '../session.js'
 
-// Login por rol (Paso 7). En el Paso 8 se reemplaza por /auth/login con usuario, clave y JWT.
+const DEMO_USERS = [
+  { username: 'secretaria', role: 'SECRETARIA' },
+  { username: 'finanzas', role: 'FINANZAS' },
+  { username: 'docente', role: 'DOCENTE' },
+  { username: 'direccion', role: 'DIRECCION' }
+]
+
 export default function Login() {
   const navigate = useNavigate()
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('demo123')
+  const [error, setError] = useState(null)
 
-  function enter(role) {
-    setRole(role)
-    navigate(ROLES[role].path)
+  async function submit(e) {
+    e.preventDefault()
+    setError(null)
+    try {
+      const res = await api.post('/auth/login', { username, password })
+      saveSession(res.token, res.role)
+      navigate(ROLES[res.role]?.path || '/dashboard')
+    } catch (e) {
+      setError(e.message)
+    }
   }
 
   return (
@@ -15,18 +33,31 @@ export default function Login() {
       <div className="login-card">
         <h1>CampusConnect <span>360</span></h1>
         <p className="muted">Ecosistema de integración para una red de colegios</p>
-        <p className="login-hint">Selecciona tu rol para ingresar</p>
-        <div className="role-grid">
-          {Object.entries(ROLES).map(([role, info]) => (
-            <button key={role} className="role-card" onClick={() => enter(role)}>
-              <strong>{info.label}</strong>
-              <span className="muted">{role}</span>
-            </button>
-          ))}
+
+        <form onSubmit={submit} className="form" style={{ marginTop: '1.5rem', textAlign: 'left' }}>
+          <label>Usuario
+            <input required value={username} onChange={(e) => setUsername(e.target.value)}
+              placeholder="secretaria / finanzas / docente / direccion" />
+          </label>
+          <label>Contraseña
+            <input type="password" required value={password}
+              onChange={(e) => setPassword(e.target.value)} />
+          </label>
+          <button className="btn primary" type="submit">Ingresar</button>
+        </form>
+
+        {error && <div className="alert error" style={{ marginTop: '1rem' }}>{error}</div>}
+
+        <div className="demo-users">
+          <span className="muted">Usuarios de prueba (clave: demo123):</span>
+          <div className="chip-row">
+            {DEMO_USERS.map((u) => (
+              <button key={u.username} className="chip" onClick={() => setUsername(u.username)}>
+                {u.username} <em>{ROLES[u.role].label}</em>
+              </button>
+            ))}
+          </div>
         </div>
-        <p className="login-note">
-          El inicio de sesión con JWT se habilita en el Paso 8 (API Gateway + seguridad).
-        </p>
       </div>
     </div>
   )
