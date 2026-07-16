@@ -1,9 +1,24 @@
 # Servicio de Asistencia / Bienestar
 
-Microservicio Spring Boot. Responsabilidad: asistencia, ausencias e incidentes/novedades.
+Microservicio Spring Boot. Registra asistencia e incidentes; **publica** `AttendanceRecorded`
+e `IncidentReported` (completa los 4 eventos de negocio obligatorios).
 
-- **BD:** `attendance_db` · **Puerto:** 8094 (interno 8080)
-- **Publica:** `AttendanceRecorded`, `IncidentReported`
-- **API:** `/attendance/*` — ver [contratos de API](../../docs/03-contratos-api.md)
+- **BD:** `attendance_db` · **Puerto host:** 8094 (interno 8080)
+- **Consume:** `StudentEnrolled` → cola `q.attendance.student` (proyección local)
+- **Publica:** `AttendanceRecorded` (`attendance.recorded`), `IncidentReported` (`incident.reported`)
+- **Swagger UI:** http://localhost:8094/swagger-ui.html · **Health:** `/actuator/health`
 
-> Se implementa en el **Paso 6** del plan. Aquí irá el proyecto Spring Boot (`pom.xml`, `src/`, `Dockerfile`).
+## Endpoints (`/attendance`)
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| GET | `/attendance/students` | Consultar estudiantes |
+| POST | `/attendance/records` | Registrar asistencia → `AttendanceRecorded` |
+| POST | `/attendance/incidents` | Registrar incidente → `IncidentReported` |
+| GET | `/attendance/students/{id}/history` | Historial de asistencia e incidentes |
+
+- `status` (asistencia): `PRESENT`, `ABSENT`, `LATE`.
+- `severity` (incidente): `LOW`, `MEDIUM`, `HIGH`.
+
+Al publicar `IncidentReported`, el servicio de Notificaciones (cola `q.notifications.incident`)
+genera una alerta simulada; Analítica incrementa `INCIDENTS_REPORTED`.

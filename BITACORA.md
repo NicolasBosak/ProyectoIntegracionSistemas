@@ -50,6 +50,49 @@
 - **Decisión:** el servicio Académico es *productor*; las colas/bindings los declara cada
   consumidor (Notificaciones/Analítica en pasos 4+). Aquí solo se declara el exchange.
 
+### Paso 4 — Notificaciones + Analítica (Publish/Subscribe)
+- **notification-service:** consume `StudentEnrolled`/`PaymentConfirmed`/`IncidentReported`
+  (colas `q.notifications.*` con Dead Letter Channel hacia `campus.dlx`), genera notificación
+  simulada y publica `NotificationSent`. Reintentos + `default-requeue-rejected: false`.
+- **analytics-service:** cola `q.analytics.all` con binding `#` (recibe todos los eventos),
+  read model CQRS en `metric_counters` + `event_records`; expone `/analytics/dashboard` y
+  `/analytics/events`. Guardia de idempotencia por `eventId`.
+- **Problema resuelto (mensajería entre servicios):** el productor añade el header
+  `__TypeId__` con su clase; el consumidor, en otro paquete, no la tiene → `ClassNotFoundException`.
+  **Solución:** conversor `Jackson2JsonMessageConverter` con `DefaultJackson2JavaTypeMapper`
+  en `TypePrecedence.INFERRED` y `trustedPackages("*")`, deserializando según el tipo del
+  `@RabbitListener`. Mantiene los servicios desacoplados sin compartir clases.
+- **Nota CQRS:** analítica es event-sourced; solo cuenta eventos ocurridos mientras está
+  activa (los 3 estudiantes semilla, que no publican eventos, no se contabilizan).
+
+### Paso 5 — Pagos + PaymentConfirmed + idempotencia
+- **payment-service:** API `/payments/*` (estudiantes, deudas, pendientes, confirmados,
+  confirmar). Publica `PaymentConfirmed`.
+- **Decisión event-driven:** Pagos consume `StudentEnrolled` (cola `q.payments.student`) para
+  crear la deuda de matrícula y una proyección local `student_refs`, evitando llamadas
+  síncronas a Académico. `student.enrolled` pasa a tener 4 consumidores.
+- **academic-service (modificado):** consume `PaymentConfirmed` (cola `q.academic.payment`),
+  actualiza `financialStatus` a `UP_TO_DATE` y publica `StudentStatusUpdated`.
+- **Idempotencia (Idempotent Receiver):** tabla `processed_events` (PK `eventId`); si el
+  evento ya fue procesado, se ignora. Cubre el flujo crítico de pagos.
+- **Trazabilidad:** el `correlationId` generado en la matrícula se reutiliza en la deuda, en
+  `PaymentConfirmed` y en `StudentStatusUpdated`, encadenando todo el flujo de negocio.
+
+### Paso 6 — Asistencia/Bienestar (4 eventos completos)
+- **attendance-service:** API `/attendance/*`; consume `StudentEnrolled` (proyección local),
+  publica `AttendanceRecorded` e `IncidentReported`. Con esto quedan los 4 eventos obligatorios.
+
+### Paso 7 — Frontend React (portales + dashboard)
+- SPA React + Vite: 3 portales operables + dashboard directivo con auto-refresh y trazabilidad.
+- **Integración real:** cada acción de UI llama a las APIs; el dashboard lee de Analítica.
+- **Verificado:** `pnpm run build` compila (42 módulos) y la app renderiza/enruta en el
+  navegador (login, navegación, manejo de error cuando el backend no responde).
+- **Decisión:** en desarrollo el navegador usa un **proxy de Vite** (origen único → cada
+  microservicio). En el Paso 8 ese rol lo asume el API Gateway y el frontend se conteneriza.
+- **Problema resuelto (entorno):** el equipo usa **pnpm 11**, que bloquea el postinstall de
+  esbuild. Se resolvió con `frontend/pnpm-workspace.yaml` → `allowBuilds: { esbuild: true }`,
+  así `pnpm install` y `pnpm run build` funcionan sin pasos manuales.
+
 ## Problemas encontrados
 - _(registrar aquí a medida que aparezcan)_
 

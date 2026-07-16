@@ -1,6 +1,8 @@
 package com.campusconnect.academic.service;
 
 import com.campusconnect.academic.domain.Enrollment;
+import com.campusconnect.academic.domain.FinancialStatus;
+import com.campusconnect.academic.domain.ProcessedEvent;
 import com.campusconnect.academic.domain.Student;
 import com.campusconnect.academic.domain.EventLog;
 import com.campusconnect.academic.dto.CreateStudentRequest;
@@ -11,11 +13,16 @@ import com.campusconnect.academic.dto.StudentResponse;
 import com.campusconnect.academic.dto.StudentStatusResponse;
 import com.campusconnect.academic.event.EventEnvelope;
 import com.campusconnect.academic.event.EventPublisher;
+import com.campusconnect.academic.event.IncomingEvent;
 import com.campusconnect.academic.event.StudentEnrolledData;
+import com.campusconnect.academic.event.StudentStatusUpdatedData;
 import com.campusconnect.academic.exception.NotFoundException;
 import com.campusconnect.academic.repository.EnrollmentRepository;
 import com.campusconnect.academic.repository.EventLogRepository;
+import com.campusconnect.academic.repository.ProcessedEventRepository;
 import com.campusconnect.academic.repository.StudentRepository;
+
+import java.util.Optional;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
@@ -36,22 +43,28 @@ public class AcademicService {
     private final StudentRepository students;
     private final EnrollmentRepository enrollments;
     private final EventLogRepository eventLogs;
+    private final ProcessedEventRepository processedEvents;
     private final EventPublisher publisher;
     private final ObjectMapper objectMapper;
     private final String studentEnrolledRoutingKey;
+    private final String studentStatusUpdatedRoutingKey;
 
     public AcademicService(StudentRepository students,
                            EnrollmentRepository enrollments,
                            EventLogRepository eventLogs,
+                           ProcessedEventRepository processedEvents,
                            EventPublisher publisher,
                            ObjectMapper objectMapper,
-                           @Value("${campus.messaging.routing-keys.student-enrolled}") String studentEnrolledRoutingKey) {
+                           @Value("${campus.messaging.routing-keys.student-enrolled}") String studentEnrolledRoutingKey,
+                           @Value("${campus.messaging.routing-keys.student-status-updated}") String studentStatusUpdatedRoutingKey) {
         this.students = students;
         this.enrollments = enrollments;
         this.eventLogs = eventLogs;
+        this.processedEvents = processedEvents;
         this.publisher = publisher;
         this.objectMapper = objectMapper;
         this.studentEnrolledRoutingKey = studentEnrolledRoutingKey;
+        this.studentStatusUpdatedRoutingKey = studentStatusUpdatedRoutingKey;
     }
 
     /**
@@ -128,6 +141,52 @@ public class AcademicService {
         Student s = requireStudent(studentCode);
         return eventLogs.findByStudentIdOrderByOccurredAtDesc(s.getId())
                 .stream().map(EventLogResponse::from).toList();
+    }
+
+    /**
+     * Consume PaymentConfirmed: actualiza el estado financiero del estudiante y publica
+     * StudentStatusUpdated. Idempotente (Idempotent Receiver): si el evento ya fue procesado,
+     * se ignora para no reprocesar un pago critico.
+     */
+    @Transactional
+    public void handlePaymentConfirmed(IncomingEvent event) {
+        if (event.eventId() != null && processedEvents.existsById(event.eventId())) {
+            log.info("PaymentConfirmed ya procesado, se ignora eventId={}", event.eventId());
+            return;
+        }
+
+        String studentCode = event.dataString("studentId");
+        Optional<Student> maybe = students.findByCode(studentCode);
+        if (maybe.isEmpty()) {
+            log.warn("PaymentConfirmed para estudiante inexistente studentId={} correlationId={}",
+                    studentCode, event.correlationId());
+            markProcessed(event);
+            return;
+        }
+
+        Student student = maybe.get();
+        String previous = student.getFinancialStatus().name();
+        student.setFinancialStatus(FinancialStatus.UP_TO_DATE);
+
+        StudentStatusUpdatedData data = new StudentStatusUpdatedData(
+                student.getCode(), FinancialStatus.UP_TO_DATE.name(), previous, "PaymentConfirmed");
+        EventEnvelope<StudentStatusUpdatedData> statusEvent =
+                EventEnvelope.of("StudentStatusUpdated", event.correlationId(), data);
+        publisher.publish(studentStatusUpdatedRoutingKey, statusEvent);
+
+        eventLogs.save(new EventLog(statusEvent.eventId(), statusEvent.eventType(),
+                event.correlationId(), student.getId(), serialize(statusEvent),
+                Instant.parse(statusEvent.occurredAt())));
+
+        markProcessed(event);
+        log.info("Estado financiero actualizado studentId={} {} -> UP_TO_DATE correlationId={}",
+                studentCode, previous, event.correlationId());
+    }
+
+    private void markProcessed(IncomingEvent event) {
+        if (event.eventId() != null) {
+            processedEvents.save(new ProcessedEvent(event.eventId(), event.eventType()));
+        }
     }
 
     // ----------------- helpers -----------------

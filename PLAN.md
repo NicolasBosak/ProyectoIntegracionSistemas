@@ -75,7 +75,14 @@ para la cláusula de autoría y la defensa individual.
 
 ---
 
-## Paso 4 — Servicio de Notificaciones + Analítica base (Publish/Subscribe) (Semana 2)
+## Paso 4 — Servicio de Notificaciones + Analítica base (Publish/Subscribe) (Semana 2) ✅
+
+> **Completado (backend).** Dos microservicios consumidores:
+> [`notification-service`](services/notification-service/README.md) (colas
+> `q.notifications.*` con DLQ, publica `NotificationSent/Failed`) y
+> [`analytics-service`](services/analytics-service/README.md) (cola `q.analytics.all`
+> con binding `#`, read model CQRS, `/analytics/dashboard`). Conversor JSON en modo
+> INFERRED para desacoplar productor/consumidor. Ambos habilitados en Compose.
 
 **Objetivo:** demostrar que **varios consumidores** reaccionan a un mismo evento.
 
@@ -89,7 +96,14 @@ para la cláusula de autoría y la defensa individual.
 
 ---
 
-## Paso 5 — Servicio de Pagos + flujo PaymentConfirmed (Semana 3)
+## Paso 5 — Servicio de Pagos + flujo PaymentConfirmed (Semana 3) ✅
+
+> **Completado (backend).** [`payment-service`](services/payment-service/README.md): API
+> `/payments/*`, consume `StudentEnrolled` (crea deuda de matrícula + proyección local),
+> publica `PaymentConfirmed`. [`academic-service`](services/academic-service/README.md)
+> ahora **consume** `PaymentConfirmed` (cola `q.academic.payment`) con **idempotencia**
+> (`processed_events`), actualiza el estado financiero y publica `StudentStatusUpdated`.
+> El `correlationId` de la matrícula se conserva a lo largo de todo el flujo.
 
 **Objetivo:** segundo flujo de negocio y actualización cruzada entre servicios.
 
@@ -103,7 +117,12 @@ para la cláusula de autoría y la defensa individual.
 
 ---
 
-## Paso 6 — Servicio de Asistencia/Bienestar (Semana 3)
+## Paso 6 — Servicio de Asistencia/Bienestar (Semana 3) ✅
+
+> **Completado (backend).** [`attendance-service`](services/attendance-service/README.md):
+> API `/attendance/*` (asistencia, incidentes, historial), consume `StudentEnrolled`
+> (proyección local), publica `AttendanceRecorded` e `IncidentReported`. Con esto están los
+> **4 eventos de negocio** obligatorios. Habilitado en Compose (7 servicios).
 
 **Objetivo:** completar los 4 eventos de negocio mínimos.
 
@@ -116,7 +135,13 @@ para la cláusula de autoría y la defensa individual.
 
 ---
 
-## Paso 7 — Frontends funcionales + Dashboard directivo (Semana 4)
+## Paso 7 — Frontends funcionales + Dashboard directivo (Semana 4) ✅
+
+> **Completado.** SPA React + Vite en [`frontend/`](frontend/README.md): Portal Académico,
+> Financiero, Docente/Bienestar y Dashboard directivo (con auto-refresh y trazabilidad).
+> **Build verificado** (`pnpm run build`, 42 módulos) y **render verificado** en navegador
+> (login + navegación + manejo de errores). Conecta a las APIs vía proxy de Vite (el gateway
+> asume ese rol en el Paso 8).
 
 **Objetivo:** que la experiencia principal ocurra **desde interfaces**, no desde Postman.
 
