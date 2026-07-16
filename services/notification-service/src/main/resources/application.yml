@@ -41,3 +41,7 @@ springdoc:
 campus:
   messaging:
     exchange: campus.events
+  notifications:
+    # Modo caos para demostrar resiliencia: si es true, las notificaciones de incidentes
+    # fallan a proposito (reintentos -> DLQ). Se activa solo durante la demo de falla.
+    chaos: ${CAMPUS_CHAOS:false}

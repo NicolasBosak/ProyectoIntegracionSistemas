@@ -1,0 +1,50 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      # CORS para permitir el frontend (cuando llama directo al gateway)
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins: "*"
+            allowedMethods: "*"
+            allowedHeaders: "*"
+      routes:
+        - id: academic
+          uri: ${ACADEMIC_URI:http://localhost:8091}
+          predicates:
+            - Path=/academic/**
+        - id: payments
+          uri: ${PAYMENT_URI:http://localhost:8092}
+          predicates:
+            - Path=/payments/**
+        - id: notifications
+          uri: ${NOTIFICATION_URI:http://localhost:8093}
+          predicates:
+            - Path=/notifications/**
+        - id: attendance
+          uri: ${ATTENDANCE_URI:http://localhost:8094}
+          predicates:
+            - Path=/attendance/**
+        - id: analytics
+          uri: ${ANALYTICS_URI:http://localhost:8095}
+          predicates:
+            - Path=/analytics/**
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway
+  endpoint:
+    health:
+      show-details: always
+
+campus:
+  security:
+    jwt-secret: ${JWT_SECRET:cambia-esto-por-un-secreto-largo-de-al-menos-32-caracteres}
+    jwt-expiration: ${JWT_EXPIRATION:3600}

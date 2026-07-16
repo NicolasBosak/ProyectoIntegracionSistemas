@@ -25,8 +25,29 @@ Cada cola declara `x-dead-letter-exchange = campus.dlx` (Dead Letter Channel). C
 |---|---|---|
 | GET | `/notifications` | Listar notificaciones |
 | GET | `/notifications/failed` | Notificaciones fallidas |
+| GET | `/notifications/dead-letters` | Mensajes en la DLQ (estado consultable) |
+| POST | `/notifications/dead-letters/{id}/reprocess` | Reprocesar un mensaje fallido |
 
-> El reproceso desde la DLQ (`POST /notifications/{id}/reprocess`) se implementa en el **Paso 9**.
+## Resiliencia (Paso 9)
+
+- **Reintentos**: `max-attempts: 3` en el listener antes de rechazar el mensaje.
+- **Dead Letter Channel**: los mensajes rechazados van a `q.notifications.*.dlq`; un
+  `DeadLetterListener` los registra en la tabla `dead_letters` y publica `NotificationFailed`.
+- **Reproceso**: `POST /notifications/dead-letters/{id}/reprocess` reenvía el mensaje al flujo
+  normal (idempotente: si ya fue reprocesado, no repite).
+- **Modo caos** (`CAMPUS_CHAOS=true`): las notificaciones de incidentes fallan a propósito para
+  demostrar el escenario de falla → reintentos → DLQ. Por defecto está desactivado.
+
+### Demo del escenario de falla
+
+```bash
+# Levantar el servicio con caos activo
+CAMPUS_CHAOS=true docker compose up -d notification-service
+# Registrar un incidente (Portal Docente) -> la notificación falla 3 veces -> DLQ
+curl http://localhost:8093/notifications/dead-letters      # aparece el mensaje fallido
+# Reprocesar
+curl -X POST http://localhost:8093/notifications/dead-letters/1/reprocess
+```
 
 ## Nota técnica
 

@@ -152,7 +152,6 @@ services:
       - "8092:8080"   # http://localhost:8092/swagger-ui.html
     networks: [campus-net]
 
-<<<<<<< HEAD
   # ---------------------------------------------------------------
   # Servicio de Asistencia/Bienestar (Paso 6)
   # ---------------------------------------------------------------
@@ -175,16 +174,34 @@ services:
       - "8094:8080"   # http://localhost:8094/swagger-ui.html
     networks: [campus-net]
 
+  # ---------------------------------------------------------------
+  # API Gateway (Paso 8) — entrada única con JWT
+  # ---------------------------------------------------------------
+  api-gateway:
+    build: ./services/api-gateway
+    container_name: cc360-gateway
+    depends_on:
+      - academic-service
+      - payment-service
+      - notification-service
+      - attendance-service
+      - analytics-service
+    environment:
+      ACADEMIC_URI: http://academic-service:8080
+      PAYMENT_URI: http://payment-service:8080
+      NOTIFICATION_URI: http://notification-service:8080
+      ATTENDANCE_URI: http://attendance-service:8080
+      ANALYTICS_URI: http://analytics-service:8080
+      JWT_SECRET: ${JWT_SECRET:-cambia-esto-por-un-secreto-largo-de-al-menos-32-caracteres}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-3600}
+    ports:
+      - "8080:8080"   # entrada única del ecosistema
+    networks: [campus-net]
+
   # ===============================================================
-  # SERVICIOS PENDIENTES — se habilitan en los pasos siguientes.
-  # api-gateway (8080, Paso 8), frontend (3000, Paso 7 se corre con
-  # `npm run dev`; se conteneriza tras el gateway en el Paso 8).
-=======
-  # ===============================================================
-  # SERVICIOS PENDIENTES — se habilitan en los pasos siguientes.
-  # attendance-service (8094, Paso 6), api-gateway (8080, Paso 8),
-  # frontend (3000, Paso 7).
->>>>>>> aabb2f6c7b243b2b766a4a8856ba478f9eda8156
+  # El frontend (Paso 7) se ejecuta con `pnpm dev` (puerto 3000) y su
+  # proxy apunta al gateway (http://localhost:8080). Contenerizarlo
+  # detrás de un nginx es una mejora opcional documentada.
   # ===============================================================
 
 volumes:

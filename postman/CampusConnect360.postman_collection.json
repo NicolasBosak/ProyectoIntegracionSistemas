@@ -1,0 +1,223 @@
+{
+  "info": {
+    "name": "CampusConnect 360",
+    "description": "Colección de respaldo técnico. Todas las llamadas pasan por el API Gateway (http://localhost:8080). Ejecuta primero 'Auth > Login' del rol correspondiente; el token se guarda en la variable de colección {{token}}.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "gateway", "value": "http://localhost:8080" },
+    { "key": "token", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login (secretaria)",
+          "event": [
+            { "listen": "test", "script": { "exec": [
+              "var json = pm.response.json();",
+              "pm.collectionVariables.set('token', json.token);"
+            ], "type": "text/javascript" } }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "url": "{{gateway}}/auth/login",
+            "body": { "mode": "raw", "raw": "{\n  \"username\": \"secretaria\",\n  \"password\": \"demo123\"\n}" }
+          }
+        },
+        {
+          "name": "Login (finanzas)",
+          "event": [
+            { "listen": "test", "script": { "exec": [
+              "pm.collectionVariables.set('token', pm.response.json().token);"
+            ], "type": "text/javascript" } }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "url": "{{gateway}}/auth/login",
+            "body": { "mode": "raw", "raw": "{\n  \"username\": \"finanzas\",\n  \"password\": \"demo123\"\n}" }
+          }
+        },
+        {
+          "name": "Login (docente)",
+          "event": [
+            { "listen": "test", "script": { "exec": [
+              "pm.collectionVariables.set('token', pm.response.json().token);"
+            ], "type": "text/javascript" } }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "url": "{{gateway}}/auth/login",
+            "body": { "mode": "raw", "raw": "{\n  \"username\": \"docente\",\n  \"password\": \"demo123\"\n}" }
+          }
+        },
+        {
+          "name": "Login (direccion)",
+          "event": [
+            { "listen": "test", "script": { "exec": [
+              "pm.collectionVariables.set('token', pm.response.json().token);"
+            ], "type": "text/javascript" } }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "url": "{{gateway}}/auth/login",
+            "body": { "mode": "raw", "raw": "{\n  \"username\": \"direccion\",\n  \"password\": \"demo123\"\n}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Académico (rol SECRETARIA)",
+      "item": [
+        {
+          "name": "Registrar estudiante",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{gateway}}/academic/students",
+            "body": { "mode": "raw", "raw": "{\n  \"firstName\": \"Ana\",\n  \"lastName\": \"Pérez\",\n  \"schoolId\": \"SCH-001\",\n  \"grade\": \"8vo EGB\",\n  \"guardianEmail\": \"rep@example.com\"\n}" }
+          }
+        },
+        {
+          "name": "Listar estudiantes",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+            "url": "{{gateway}}/academic/students"
+          }
+        },
+        {
+          "name": "Estado del estudiante",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+            "url": "{{gateway}}/academic/students/STU-004/status"
+          }
+        },
+        {
+          "name": "Historial de eventos",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+            "url": "{{gateway}}/academic/students/STU-004/events"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Pagos (rol FINANZAS)",
+      "item": [
+        {
+          "name": "Estudiantes",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+            "url": "{{gateway}}/payments/students"
+          }
+        },
+        {
+          "name": "Pendientes",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+            "url": "{{gateway}}/payments/pending"
+          }
+        },
+        {
+          "name": "Confirmar pago",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{gateway}}/payments/confirm",
+            "body": { "mode": "raw", "raw": "{\n  \"studentId\": \"STU-004\",\n  \"amount\": 150.00,\n  \"concept\": \"Matricula\",\n  \"method\": \"TRANSFER\"\n}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Asistencia (rol DOCENTE)",
+      "item": [
+        {
+          "name": "Estudiantes",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+            "url": "{{gateway}}/attendance/students"
+          }
+        },
+        {
+          "name": "Registrar asistencia",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{gateway}}/attendance/records",
+            "body": { "mode": "raw", "raw": "{\n  \"studentId\": \"STU-004\",\n  \"status\": \"PRESENT\"\n}" }
+          }
+        },
+        {
+          "name": "Registrar incidente",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{gateway}}/attendance/incidents",
+            "body": { "mode": "raw", "raw": "{\n  \"studentId\": \"STU-004\",\n  \"category\": \"BEHAVIOR\",\n  \"severity\": \"HIGH\",\n  \"description\": \"Novedad de bienestar\"\n}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Analítica y Notificaciones (rol DIRECCION)",
+      "item": [
+        {
+          "name": "Dashboard",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+            "url": "{{gateway}}/analytics/dashboard"
+          }
+        },
+        {
+          "name": "Eventos (trazabilidad)",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+            "url": "{{gateway}}/analytics/events"
+          }
+        },
+        {
+          "name": "Mensajes fallidos (DLQ)",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+            "url": "{{gateway}}/notifications/dead-letters"
+          }
+        },
+        {
+          "name": "Reprocesar DLQ",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+            "url": "{{gateway}}/notifications/dead-letters/1/reprocess"
+          }
+        }
+      ]
+    }
+  ]
+}
